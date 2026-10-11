@@ -1,0 +1,29 @@
+# TODO: add Deployment, Service, ConfigMap/Secret references,
+# resource requests/limits, probes, securityContext and image pull policy.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure-enterprise-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secure-enterprise-ai
+  template:
+    metadata:
+      labels:
+        app: secure-enterprise-ai
+    spec:
+      containers:
+        - name: api
+          image: secure-enterprise-ai:local
+          ports:
+            - containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
