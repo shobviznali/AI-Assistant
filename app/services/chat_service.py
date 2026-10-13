@@ -1,8 +1,15 @@
-from app.models.schemas import ChatRequest, ChatResponse
-from app.services.retrieval_service import retrieve_relevant_chunks
+from app.models.schemas import ChatRequest, ChatResponse, AuthenticatedChatRequest
+from app.services.retrieval_service import retrieve
+from app.services.prompt_service import build_prompt
+from app.services.llm_service import generate_answer
+from app.core.security import USER_GROUPS
+from app.storage.vector_storage import store
+
 
 def answer_question(payload: ChatRequest) -> ChatResponse:
-    chunks = retrieve_relevant_chunks(payload.question, payload.username)
+    allowed_groups = USER_GROUPS.get(payload.username.lower(), set())
+    chunks = retrieve(payload.question, allowed_groups, store)
+
     if not chunks:
         return ChatResponse(
             answer="I don't have enough information in the accessible documents to answer that.",
@@ -10,14 +17,19 @@ def answer_question(payload: ChatRequest) -> ChatResponse:
             abstained=True,
         )
 
-    # TODO: call generate_answer() with the retrieved context.
-    # TODO: verify citations are limited to the retrieved authorized chunks.
+    prompt = build_prompt(payload.question, chunks)
+    answer = generate_answer(prompt)
+
     citations = [
-        {"document_id": c["document_id"], "title": c["title"], "excerpt": c["excerpt"]}
+        {
+            "document_id": c["chunk"]["document_id"],
+            "title": c["chunk"]["filename"],
+            "excerpt": c["chunk"]["text"]
+        }
         for c in chunks
     ]
     return ChatResponse(
-        answer="TODO: generate a grounded answer from the retrieved context.",
+        answer=answer,
         citations=citations,
         abstained=False,
     )

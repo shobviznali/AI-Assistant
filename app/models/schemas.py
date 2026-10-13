@@ -11,7 +11,6 @@ class DocumentInfo(BaseModel):
     owner_group: str
 
 class ChatRequest(BaseModel):
-    username: str = Field(min_length=1, max_length=80)
     question: str = Field(min_length=1, max_length=4000)
 
     @field_validator("question")
@@ -24,6 +23,10 @@ class ChatRequest(BaseModel):
 
         return value
 
+
+class AuthenticatedChatRequest(ChatRequest):
+    username: str = Field(min_length=1, max_length=80)
+
 class SourceCitation(BaseModel):
     document_id: str
     title: str
@@ -33,3 +36,8 @@ class ChatResponse(BaseModel):
     answer: str
     citations: list[SourceCitation] = []
     abstained: bool = False
+
+
+class LoginRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=80)
+    password: str = Field(min_length=1)

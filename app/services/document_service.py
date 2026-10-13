@@ -11,8 +11,13 @@ from app.core.security import user_can_access
 from app.models.schemas import DocumentCreate, DocumentInfo
 from pathlib import Path
 from app.services.chunking_service import create_chunks
+from app.services.chunking_service import create_chunks
+from app.services.embedding_service import generate_chunk_embeddings
+from app.storage.vector_storage import store
+
 
 _DOCUMENTS: dict[str, dict] = {}
+
 
 def add_document(payload: DocumentCreate) -> DocumentInfo:
     document_id = str(uuid4())
@@ -22,6 +27,16 @@ def add_document(payload: DocumentCreate) -> DocumentInfo:
         "content": payload.content,
         "owner_group": payload.owner_group,
     }
+
+    chunks = create_chunks(
+        document_id=item["id"],
+        filename=item["title"],
+        text=item["content"],
+        owner_group=item["owner_group"]
+    )
+    embedded_chunks = generate_chunk_embeddings(chunks)
+    store.add_chunks(embedded_chunks)
+
     _DOCUMENTS[document_id] = item
     return DocumentInfo(id=document_id, title=item["title"], owner_group=item["owner_group"])
 

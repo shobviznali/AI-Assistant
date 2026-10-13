@@ -1,9 +1,21 @@
-"""LLM provider adapter TODO.
+import os
 
-Keep provider-specific code behind this interface so the deployment can
-switch between a local model and an approved enterprise provider.
-"""
+from dotenv import load_dotenv
+from openai import OpenAI
+from app.services.prompt_service import SYSTEM_PROMPT
+load_dotenv()
 
-def generate_answer(question: str, context: list[dict]) -> str:
-    # TODO: call a local/approved LLM. Treat retrieved text as untrusted data.
-    raise NotImplementedError("Implement the LLM provider adapter")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+
+def generate_answer(prompt: str) -> str:
+
+    response = client.responses.create(
+        model="gpt-4.1-mini",
+        instructions=SYSTEM_PROMPT,
+        input=prompt
+    )
+
+    answer = response.output_text
+
+    return answer
